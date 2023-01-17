@@ -230,7 +230,7 @@ export class Service<R extends Resource = Resource> {
         /* */
     }
 
-    public delete(id: string, params?: Object): Observable<void> {
+    public delete(id: string, params?: IParamsResource | IParamsCollection): Observable<void> {
         params = { ...{}, ...Base.ParamsResource, ...params };
 
         // http request

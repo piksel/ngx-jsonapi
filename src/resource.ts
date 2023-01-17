@@ -165,7 +165,7 @@ export class Resource implements ICacheable {
         return ret;
     }
 
-    public fill(data_object: IDocumentResource | ICacheableDocumentResource): boolean {
+    public fill(data_object: IDocumentResource | ICacheableDocumentResource, replaceRels: boolean = false): boolean {
         this.id = data_object.data.id || '';
 
         // WARNING: leaving previous line for a tiem because this can produce undesired behavior
@@ -177,7 +177,7 @@ export class Resource implements ICacheable {
         // NOTE: fix if stored resource has no relationships property
         let service: Service | undefined = Converter.getService(data_object.data.type);
 
-        if (!this.relationships && service) {
+        if ((replaceRels || !this.relationships) && service) {
             this.relationships = new service.resource().relationships;
         }
 
@@ -294,7 +294,7 @@ export class Resource implements ICacheable {
         let subject: Subject<object> = new Subject<object>();
         let object: IDocumentResource = this.toObject(params);
         if (this.id === '') {
-            delete object.data.id;
+            delete (object.data as any).id;
         }
 
         // http request
