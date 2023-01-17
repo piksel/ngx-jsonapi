@@ -23,7 +23,7 @@
     "public-api.ts"
   ],
   "angularCompilerOptions": {
-    "annotateForClosureCompiler": true,
+    // "annotateForClosureCompiler": true,
     "strictMetadataEmit": false,
     "flatModuleOutFile": "index.js",
     "flatModuleId": "ngx-jsonapi"
