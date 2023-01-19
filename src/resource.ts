@@ -327,7 +327,7 @@ export class Resource implements ICacheable {
             },
             error => {
                 this.is_saving = false;
-                subject.error('data' in error ? error.data : error);
+                subject.error( (typeof error === 'object' && 'data' in error) ? error.data : error);
             }
         );
 
