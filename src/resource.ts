@@ -7,7 +7,7 @@ import { Base } from './services/base';
 import { PathBuilder } from './services/path-builder';
 import { Converter } from './services/converter';
 import { IDocumentResource, ICacheableDocumentResource } from './interfaces/data-object';
-import { IAttributes, IParamsResource, ILinks } from './interfaces';
+import { IAttributes, IParamsResource, ILinks, IResourcesByType } from './interfaces';
 import { DocumentCollection } from './document-collection';
 import { DocumentResource } from './document-resource';
 import { ICacheable } from './interfaces/cacheable';
@@ -17,20 +17,20 @@ import { IRelationships } from './interfaces/relationship';
 import { SourceType } from './document';
 
 export class Resource implements ICacheable {
-    public id: string = '';
-    public type: string = '';
+    public id = '';
+    public type = '';
     public attributes: IAttributes = {};
     public relationships: IRelationships = {};
     public links: ILinks = {};
     public meta: { [key: string]: any };
 
-    public is_new: boolean = true;
-    public is_saving: boolean = false;
-    public is_loading: boolean = false;
-    public loaded: boolean = true;
+    public is_new = true;
+    public is_saving = false;
+    public is_loading = false;
+    public loaded = true;
     public source: SourceType = 'new';
-    public cache_last_update: number = 0;
-    public ttl: number = 0;
+    public cache_last_update = 0;
+    public ttl = 0;
 
     public reset(): void {
         this.id = '';
@@ -46,9 +46,9 @@ export class Resource implements ICacheable {
     public toObject(params?: IParamsResource): IDocumentResource {
         params = { ...{}, ...Base.ParamsResource, ...params };
 
-        let relationships: any = {};
-        let included: Array<IDataResource> = [];
-        let included_ids: Array<string> = []; // just for control don't repeat any resource
+        const relationships: any = {};
+        const included: Array<IDataResource> = [];
+        const included_ids: Array<string> = []; // just for control don't repeat any resource
         let included_relationships: Array<string> = params.include || [];
         if (params.include_save) {
             included_relationships = included_relationships.concat(params.include_save);
@@ -57,7 +57,7 @@ export class Resource implements ICacheable {
         // REALTIONSHIPS
         // eslint-disable-next-line no-restricted-syntax
         for (const relation_alias in this.relationships) {
-            let relationship: DocumentCollection | DocumentResource = this.relationships[relation_alias];
+            const relationship: DocumentCollection | DocumentResource = this.relationships[relation_alias];
             if (relationship instanceof DocumentCollection) {
                 // @TODO PABLO: definir cuál va a ser la propiedd indispensable para guardar la relación
                 if (!relationship.builded && (!relationship.data || relationship.data.length === 0)) {
@@ -67,7 +67,7 @@ export class Resource implements ICacheable {
                 }
 
                 for (const resource of relationship.data) {
-                    let reational_object: {
+                    const reational_object: {
                         id: string;
                         type: string;
                     } = {
@@ -77,7 +77,7 @@ export class Resource implements ICacheable {
                     relationships[relation_alias].data.push(reational_object);
 
                     // no se agregó aún a included && se ha pedido incluir con el parms.include
-                    let temporal_id: string = resource.type + '_' + resource.id;
+                    const temporal_id: string = resource.type + '_' + resource.id;
                     if (
                         included_ids.indexOf(temporal_id) === -1 &&
                         included_relationships &&
@@ -97,7 +97,7 @@ export class Resource implements ICacheable {
                     console.warn(relationship, ' is not DocumentCollection or DocumentResource');
                 }
 
-                let relationship_data: Resource = <Resource>relationship.data;
+                const relationship_data: Resource = <Resource>relationship.data;
                 if (relationship.data && !('id' in relationship.data) && Object.keys(relationship.data).length > 0) {
                     console.warn(relation_alias + ' defined with hasMany:false, but I have a collection');
                 }
@@ -118,7 +118,7 @@ export class Resource implements ICacheable {
                 }
 
                 // no se agregó aún a included && se ha pedido incluir con el parms.include
-                let temporal_id: string = relationship_data.type + '_' + relationship_data.id;
+                const temporal_id: string = relationship_data.type + '_' + relationship_data.id;
                 if (
                     included_ids.indexOf(temporal_id) === -1 &&
                     included_relationships &&
@@ -139,7 +139,7 @@ export class Resource implements ICacheable {
             attributes = this.attributes;
         }
 
-        let ret: IDocumentResource = {
+        const ret: IDocumentResource = {
             data: {
                 type: this.type,
                 id: this.id,
@@ -165,7 +165,7 @@ export class Resource implements ICacheable {
         return ret;
     }
 
-    public fill(data_object: IDocumentResource | ICacheableDocumentResource, replaceRels: boolean = false): boolean {
+    public fill(data_object: IDocumentResource | ICacheableDocumentResource, replaceRels = false, included?: IResourcesByType): boolean {
         this.id = data_object.data.id || '';
 
         // WARNING: leaving previous line for a tiem because this can produce undesired behavior
@@ -175,7 +175,7 @@ export class Resource implements ICacheable {
         this.is_new = false;
 
         // NOTE: fix if stored resource has no relationships property
-        let service: Service | undefined = Converter.getService(data_object.data.type);
+        const service: Service | undefined = Converter.getService(data_object.data.type);
 
         if ((replaceRels || !this.relationships) && service) {
             this.relationships = new service.resource().relationships;
@@ -189,7 +189,7 @@ export class Resource implements ICacheable {
         // only ids?
         if (Object.keys(this.attributes).length) {
             // @todo remove this when getResourceService ToDo is fixed
-            let srvc: Service | undefined = Converter.getService(this.type);
+            const srvc: Service | undefined = Converter.getService(this.type);
             if (srvc && 'parseFromServer' in srvc) {
                 srvc.parseFromServer(this.attributes);
             }
@@ -203,14 +203,14 @@ export class Resource implements ICacheable {
             Converter.getService,
             data_object.data.relationships || {},
             this.relationships,
-            Converter.buildIncluded(data_object)
+            included ?? Converter.buildIncluded(data_object)
         ).buildRelationships();
 
         return true;
     }
 
     public addRelationship<T extends Resource>(resource: T, type_alias?: string): void {
-        let relation: DocumentCollection | DocumentResource = this.relationships[type_alias || resource.type];
+        const relation: DocumentCollection | DocumentResource = this.relationships[type_alias || resource.type];
         if (relation instanceof DocumentCollection) {
             relation.replaceOrAdd(resource);
         } else {
@@ -223,7 +223,7 @@ export class Resource implements ICacheable {
             return;
         }
 
-        let relation: DocumentCollection | DocumentResource = this.relationships[type_alias];
+        const relation: DocumentCollection | DocumentResource = this.relationships[type_alias];
         if (!(relation instanceof DocumentCollection)) {
             throw new Error('addRelationships require a DocumentCollection (hasMany) relation.');
         }
@@ -241,7 +241,7 @@ export class Resource implements ICacheable {
             return false;
         }
 
-        let relation: DocumentCollection | DocumentResource = this.relationships[type_alias];
+        const relation: DocumentCollection | DocumentResource = this.relationships[type_alias];
         if (relation instanceof DocumentCollection) {
             relation.data = relation.data.filter(resource => resource.id !== id);
             if (relation.data.length === 0) {
@@ -291,14 +291,14 @@ export class Resource implements ICacheable {
         }
         this.is_saving = true;
 
-        let subject: Subject<object> = new Subject<object>();
-        let object: IDocumentResource = this.toObject(params);
+        const subject: Subject<object> = new Subject<object>();
+        const object: IDocumentResource = this.toObject(params);
         if (this.id === '') {
             delete (object.data as any).id;
         }
 
         // http request
-        let path: PathBuilder = new PathBuilder();
+        const path: PathBuilder = new PathBuilder();
         path.applyParams(this.getService(), params);
         if (this.id) {
             path.appendPath(this.id);
@@ -353,7 +353,7 @@ export class Resource implements ICacheable {
     public setSourceAndPropagate(value: SourceType): void {
         this.setSource(value);
         Object.keys(this.relationships).forEach((relationship_alias): void => {
-            let relationship: DocumentCollection | DocumentResource = this.relationships[relationship_alias];
+            const relationship: DocumentCollection | DocumentResource = this.relationships[relationship_alias];
             if (relationship instanceof DocumentCollection) {
                 relationship.setSource(value);
             }

@@ -15,7 +15,7 @@ export class RelatedDocumentCollection<R extends Resource = Resource> extends Do
     public data: Array<Resource | IBasicDataResource> = [];
     // public data: Array<Resource | IBasicDataResource> = [];
     public page: Page = new Page();
-    public ttl: number = 0;
+    public ttl = 0;
     public content: 'ids' | 'collection' = 'ids';
 
     public trackBy(iterated_resource: Resource): string {
@@ -29,7 +29,7 @@ export class RelatedDocumentCollection<R extends Resource = Resource> extends Do
 
         // this is the best way: https://jsperf.com/fast-array-foreach
         // eslint-disable-next-line @typescript-eslint/prefer-for-of
-        for (let i: number = 0; i < this.data.length; i++) {
+        for (let i = 0; i < this.data.length; i++) {
             if (this.data[i].id === id) {
                 return <R>this.data[i];
             }
@@ -39,7 +39,7 @@ export class RelatedDocumentCollection<R extends Resource = Resource> extends Do
     }
 
     public fill(data_collection: IDataCollection | ICacheableDataCollection): void {
-        Converter.buildIncluded(data_collection);
+        const included = Converter.buildIncluded(data_collection);
 
         // sometimes get Cannot set property 'number' of undefined (page)
         if (this.page && data_collection.meta) {
@@ -51,13 +51,13 @@ export class RelatedDocumentCollection<R extends Resource = Resource> extends Do
         }
 
         // convert and add new dataresoures to final collection
-        let new_ids: any = {};
+        const new_ids: any = {};
         this.data.length = 0;
         this.builded = data_collection.data && data_collection.data.length === 0;
-        for (let dataresource of data_collection.data) {
+        for (const dataresource of data_collection.data) {
             try {
-                let res: Resource = this.getResourceOrFail(dataresource);
-                res.fill({ data: dataresource });
+                const res: Resource = this.getResourceOrFail(dataresource);
+                res.fill({ data: dataresource }, false, included);
                 new_ids[dataresource.id] = dataresource.id;
                 (<Array<R>>this.data).push(<R>res);
                 if (Object.keys(res.attributes).length > 0) {
@@ -86,13 +86,13 @@ export class RelatedDocumentCollection<R extends Resource = Resource> extends Do
     }
 
     private getResourceOrFail(dataresource: IDataResource): Resource {
-        let res: R | null = this.find(dataresource.id);
+        const res: R | null = this.find(dataresource.id);
 
         if (res !== null) {
             return res;
         }
 
-        let service: Service | undefined = Converter.getService(dataresource.type);
+        const service: Service | undefined = Converter.getService(dataresource.type);
 
         // remove when getService return null or catch errors
         // this prvent a fill on undefinied service :/
@@ -128,7 +128,7 @@ export class RelatedDocumentCollection<R extends Resource = Resource> extends Do
             return null;
         }
 
-        let total_resources: number = this.page.size * (this.page.number - 1) + this.data.length;
+        const total_resources: number = this.page.size * (this.page.number - 1) + this.data.length;
 
         return total_resources < this.page.total_resources;
     }
@@ -195,7 +195,7 @@ export class RelatedDocumentCollection<R extends Resource = Resource> extends Do
             return { data: this.data };
         }
 
-        let data: Array<IDataResource> = (<Array<R>>this.data).map(resource => {
+        const data: Array<IDataResource> = (<Array<R>>this.data).map(resource => {
             return resource.toObject(params).data;
         });
 
